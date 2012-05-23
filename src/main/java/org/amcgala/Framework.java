@@ -477,4 +477,12 @@ public abstract class Framework {
     public void unregisterInputEventHandler(InputHandler handler) {
         inputEventBus.unregister(handler);
     }
+
+    public int getNodeCount() {
+        return scenegraph.getNodeCount();
+    }
+
+    public Node removeNode(String label) {
+        return scenegraph.removeNode(label);
+    }
 }

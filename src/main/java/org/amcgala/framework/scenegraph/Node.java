@@ -62,7 +62,9 @@ public class Node {
     public Node(String label) {
         this.label = label;
         transformation = new Translation(0, 0, 0);
+        // TODO diese Datenstruktur soll weg! Es ist eine sehr unschöne Möglichkeit, das Framework thread-safe zu gestalten.
         geometry = new CopyOnWriteArrayList<Shape>();
+        // TODO diese Datenstruktur soll weg! Es ist eine sehr unschöne Möglichkeit, das Framework thread-safe zu gestalten.
         children = new CopyOnWriteArrayList<Node>();
     }
 
@@ -88,9 +90,7 @@ public class Node {
      */
     public Node addChild(Node childNode) {
         childNode.parent = this;
-        synchronized (children) {
-            children.add(childNode);
-        }
+        children.add(childNode);
         return this;
     }
 
@@ -100,21 +100,19 @@ public class Node {
      * @param label das Label des zu löschenden Knoten
      * @return true, wenn Knoten gefunden und entfernt wurde
      */
-    public boolean removeNode(String label) {
-        synchronized (children) {
-            for (Node n : children) {
-                if (n.label.equalsIgnoreCase(label)) {
-                    children.remove(n);
-                    return true;
-                }
-            }
-
-            for (Node n : children) {
-                return n.removeNode(label);
+    public Node removeNode(String label) {
+        for (Node n : children) {
+            if (n.label.equalsIgnoreCase(label)) {
+                children.remove(n);
+                return n;
             }
         }
 
-        return false;
+        for (Node n : children) {
+            return n.removeNode(label);
+        }
+
+        return null;
     }
 
     /**
@@ -127,14 +125,12 @@ public class Node {
      * @return true, wenn es hinzugefügt werden konnte
      */
     public boolean addShape(String label, Shape newShape) {
-        synchronized (geometry) {
-            if (this.label.equalsIgnoreCase(label)) {
-                geometry.add(newShape);
-                return true;
-            } else {
-                for (Node n : children) {
-                    n.addShape(label, newShape);
-                }
+        if (this.label.equalsIgnoreCase(label)) {
+            geometry.add(newShape);
+            return true;
+        } else {
+            for (Node n : children) {
+                n.addShape(label, newShape);
             }
         }
         return false;
@@ -147,30 +143,10 @@ public class Node {
      * @return true, wenn es erfolgreich hinzugefügt wurde
      */
     public boolean addShape(Shape shape) {
-        synchronized (geometry) {
-            geometry.add(shape);
-        }
+        geometry.add(shape);
         return true;
     }
 
-    /**
-     * Gibt einen Knoten mit einem bestimmten Label zurück.
-     *
-     * @param label Label des Knoten, der gefunden werden soll
-     * @return true, wenn Knoten gefunden wurde
-     */
-    public Node findNode(String label) {
-        synchronized (children) {
-            if (this.label.equalsIgnoreCase(label)) {
-                return this;
-            } else {
-                for (Node n : children) {
-                    return n.findNode(label);
-                }
-            }
-        }
-        return null;
-    }
 
     /**
      * Übergibt einen neuen Visitor an den Knoten.
@@ -178,11 +154,9 @@ public class Node {
      * @param visitor der Visitor, der den Knoten besuchen soll
      */
     public void accept(Visitor visitor) {
-        synchronized (children) {
-            visitor.visit(this);
-            for (Node n : children) {
-                n.accept(visitor);
-            }
+        visitor.visit(this);
+        for (Node n : children) {
+            n.accept(visitor);
         }
     }
 
@@ -259,6 +233,27 @@ public class Node {
         return b;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Node node = (Node) o;
+
+        if (!children.equals(node.children)) return false;
+        if (!geometry.equals(node.geometry)) return false;
+        if (!label.equals(node.label)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = label.hashCode();
+        result = 31 * result + children.hashCode();
+        result = 31 * result + geometry.hashCode();
+        return result;
+    }
 
     @Override
     public String toString() {
