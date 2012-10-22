@@ -39,7 +39,7 @@ public class Plotter extends Amcgala {
 
     public Plotter() {
         // Primitiver Line-Renderer wird gesetzt
-        //this.scene.setRenderer(new BresenhamRenderer(scene.getCamera()));
+        this.scene.setRenderer(new BresenhamRenderer(scene.getCamera()));
         // fügt eine neue Scene hinzu
         this.framework.addScene(scene);
         // fügt ein neues Element mit Knotenpunkt zum Scenengraphen hinzu
